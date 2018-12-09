@@ -4,6 +4,7 @@ const StreamZip = require('node-stream-zip');
 const os = require('os');
 const fs = require('fs');
 const path = require('path');
+const pkg = require('./package');
 const { DownloaderHelper } = require('node-downloader-helper');
 const { promisify } = require('util');
 const tar = require('tar');
@@ -12,7 +13,7 @@ const mkdir = promisify(fs.mkdir);
 const chmod = promisify(fs.chmod);
 
 // The version of the driver that will be installed
-const GECKODRIVER_VERSION = '0.23.0';
+const GECKODRIVER_VERSION = `v${pkg.geckodriver_version}`;
 
 const isWindows = os.platform() === 'win32';
 
@@ -32,19 +33,19 @@ function getDriverUrl() {
   if (process.env.GECKODRIVER_BASE_URL) {
     urlBase = process.env.GECKODRIVER_BASE_URL;
   } else {
-    urlBase = `https://github.com/mozilla/geckodriver/releases/download/v${GECKODRIVER_VERSION}/`;
+    urlBase = `https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/`;
   }
 
   switch (os.platform()) {
     case 'darwin':
-      return `${urlBase}geckodriver-v${GECKODRIVER_VERSION}-macos.tar.gz`;
+      return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-macos.tar.gz`;
     case 'linux': {
       const arch = os.arch() === 'x64' ? '64' : '32';
-      return `${urlBase}geckodriver-v${GECKODRIVER_VERSION}-linux${arch}.tar.gz`;
+      return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-linux${arch}.tar.gz`;
     }
     case 'win32': {
       const arch = os.arch() === 'x64' ? 'win64' : 'win32';
-      return `${urlBase}geckodriver-v${GECKODRIVER_VERSION}-${arch}.zip`;
+      return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-${arch}.zip`;
     }
     default:
       return undefined;
