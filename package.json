@@ -30,15 +30,16 @@
   },
   "license": "MIT",
   "dependencies": {
-    "download": "6.2.5"
+    "node-downloader-helper": "1.0.9",
+    "node-stream-zip": "1.7.0",
+    "tar": "4.4.8"
   },
   "devDependencies": {
-    "eslint": "^4.6.1",
+    "eslint": "^5.10.0",
     "eslint-config-prettier": "^2.4.0",
     "eslint-plugin-prettier": "^2.2.0",
     "prettier": "^1.6.1",
-    "request": "^2.69.0",
-    "semver": "^5.4.1",
-    "toml": "^2.3.3"
+    "request": "^2.88.0",
+    "semver": "^5.0.1"
   }
 }
