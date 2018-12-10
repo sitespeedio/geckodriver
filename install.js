@@ -74,10 +74,9 @@ async function download() {
         fileName: 'geckodriver' + (isWindows ? '.zip' : '.tar.gz')
       });
 
-      dl
-        .on('error', err =>
-          console.error('Could not download Geckodriver: ' + downloadUrl, err)
-        )
+      dl.on('error', err =>
+        console.error('Could not download Geckodriver: ' + downloadUrl, err)
+      )
         .on('progress', stats => {
           const progress = stats.progress.toFixed(1);
           const speed = byteHelper(stats.speed);

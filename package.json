@@ -1,6 +1,6 @@
 {
   "name": "@sitespeed.io/geckodriver",
-  "version": "0.0.1",
+  "version": "0.22.0",
   "geckodriver_version": "0.23.0",
   "description": "Install and launch Geckodriver for Mac, Linux or Windows.",
   "main": "index.js",
@@ -8,6 +8,7 @@
     "index.js",
     "install.js",
     "package.json",
+    "npm-shrinkwrap.json",
     "README.md"
   ],
   "scripts": {
@@ -35,12 +36,12 @@
     "tar": "4.4.8"
   },
   "devDependencies": {
-    "eslint": "^5.10.0",
-    "eslint-config-prettier": "^2.4.0",
-    "eslint-plugin-prettier": "^2.2.0",
-    "prettier": "^1.6.1",
-    "request": "^2.88.0",
-    "semver": "^5.0.1",
-    "toml": "^2.3.3"
+    "eslint": "5.10.0",
+    "eslint-config-prettier": "3.3.0",
+    "eslint-plugin-prettier": "3.0.0",
+    "prettier": "1.15.3",
+    "request": "2.88.0",
+    "semver": "5.6.0",
+    "toml": "2.3.3"
   }
 }
