@@ -27,7 +27,7 @@
   "author": "Tobias Lidskog <tobias@lidskog.se>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sitespeedio/geckodriver.git"
+    "url": "git+https://github.com/sitespeedio/geckodriver.git"
   },
   "license": "MIT",
   "dependencies": {
@@ -43,5 +43,9 @@
     "request": "2.88.0",
     "semver": "5.6.0",
     "toml": "2.3.3"
-  }
+  },
+  "bugs": {
+    "url": "https://github.com/sitespeedio/geckodriver/issues"
+  },
+  "homepage": "https://github.com/sitespeedio/geckodriver#readme"
 }
