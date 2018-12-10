@@ -64,7 +64,11 @@ async function download() {
       try {
         await mkdir('vendor');
       } catch (e) {
-        await unlink('vendor/geckodriver');
+        try {
+          await unlink('vendor/geckodriver');
+        } catch (e) {
+          // nothing to do here
+        }
       }
       const dl = new DownloaderHelper(downloadUrl, 'vendor', {
         fileName: 'geckodriver' + (isWindows ? '.zip' : '.tar.gz')
