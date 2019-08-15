@@ -17,6 +17,9 @@ const GECKODRIVER_VERSION = `v${pkg.geckodriver_version}`;
 
 const isWindows = os.platform() === 'win32';
 
+let cdnUrl = process.env.GECKODRIVER_CDNURL || process.env.npm_config_geckodriver_cdnurl || 'https://github.com/mozilla/geckodriver/releases/download';
+cdnUrl = cdnUrl.replace(/\/+$/, '');
+
 function byteHelper(value) {
   // https://gist.github.com/thomseddon/3511330
   const units = ['b', 'kB', 'MB', 'GB', 'TB'],
@@ -33,7 +36,7 @@ function getDriverUrl() {
   if (process.env.GECKODRIVER_BASE_URL) {
     urlBase = process.env.GECKODRIVER_BASE_URL;
   } else {
-    urlBase = `https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/`;
+    urlBase = `${cdnUrl}/${GECKODRIVER_VERSION}/`;
   }
 
   switch (os.platform()) {
