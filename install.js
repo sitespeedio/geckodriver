@@ -113,7 +113,11 @@ async function download() {
               })
               .then(async () => {
                 await unlink('vendor/geckodriver.tar.gz');
-                await chmod('vendor/geckodriver', '755');
+                let driverPath = 'vendor/geckodriver';
+                if (os.platform() === 'win32') {
+                  driverPath = driverPath + '.exe';
+                }
+                await chmod(driverPath, '755');
                 console.log(
                   `Geckodriver ${GECKODRIVER_VERSION} installed in ${path.join(
                     __dirname,
