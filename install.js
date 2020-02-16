@@ -13,7 +13,9 @@ const mkdir = promisify(fs.mkdir);
 const chmod = promisify(fs.chmod);
 
 // The version of the driver that will be installed
-const GECKODRIVER_VERSION = `v${pkg.geckodriver_version}`;
+const GECKODRIVER_VERSION = process.env.GECKODRIVER_VERSION
+  ? `v${process.env.GECKORIVER_VERSION}`
+  : `v${pkg.geckodriver_version}`;
 
 const isWindows = os.platform() === 'win32';
 
