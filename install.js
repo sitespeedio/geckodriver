@@ -34,6 +34,8 @@ function getDriverUrl() {
   let urlBase;
   if (process.env.GECKODRIVER_BASE_URL) {
     urlBase = process.env.GECKODRIVER_BASE_URL;
+  } else if (os.platform() === 'linux' && os.arch() === 'arm') {
+    urlBase = `https://github.com/sitespeedio/geckodriver/releases/download/v0.29.0/`;
   } else {
     urlBase = `https://github.com/mozilla/geckodriver/releases/download/${GECKODRIVER_VERSION}/`;
   }
@@ -42,8 +44,14 @@ function getDriverUrl() {
     case 'darwin':
       return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-macos.tar.gz`;
     case 'linux': {
-      const arch = os.arch() === 'x64' ? '64' : '32';
-      return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-linux${arch}.tar.gz`;
+      if (os.arch() === 'arm') {
+        // Don't want to spend hours to build a new one, so for now serve 0.29.0
+        // or unreleased 0.30.0
+        return `${urlBase}geckodriver-0.30.0-linux-arm.tar.gz`;
+      } else {
+        const arch = os.arch() === 'x64' ? '64' : '32';
+        return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-linux${arch}.tar.gz`;
+      }
     }
     case 'win32': {
       const arch = os.arch() === 'x64' ? 'win64' : 'win32';
