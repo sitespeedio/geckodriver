@@ -1,7 +1,7 @@
 {
   "name": "@sitespeed.io/geckodriver",
   "version": "0.29.1-3",
-  "geckodriver_version": "0.29.1",
+  "geckodriver_version": "0.30.0",
   "description": "Install and launch Geckodriver for Mac, Linux or Windows.",
   "main": "index.js",
   "files": [
