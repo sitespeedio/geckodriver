@@ -1,7 +1,7 @@
 {
   "name": "@sitespeed.io/geckodriver",
   "version": "0.31.0-c",
-  "geckodriver_version": "0.31.0",
+  "geckodriver_version": "0.32.0",
   "description": "Install and launch Geckodriver for Mac, Linux or Windows.",
   "main": "index.js",
   "files": [
@@ -31,9 +31,9 @@
   },
   "license": "MIT",
   "dependencies": {
-    "node-downloader-helper": "2.1.1",
+    "node-downloader-helper": "2.1.5",
     "node-stream-zip": "1.15.0",
-    "tar": "6.1.11"
+    "tar": "6.1.13"
   },
   "devDependencies": {
     "eslint": "5.10.0",
