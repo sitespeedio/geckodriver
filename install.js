@@ -8,6 +8,7 @@ const pkg = require('./package');
 const { DownloaderHelper } = require('node-downloader-helper');
 const { promisify } = require('util');
 const tar = require('tar');
+const semver = require('semver');
 const unlink = promisify(fs.unlink);
 const mkdir = promisify(fs.mkdir);
 const chmod = promisify(fs.chmod);
@@ -42,7 +43,13 @@ function getDriverUrl() {
 
   switch (os.platform()) {
     case 'darwin':
-      return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-macos.tar.gz`;
+      // Starting from Geckodriver v0.29.1, there is a separate build for arm64
+      // architecture. Let's install it if we are on arm64 as well.
+      const arch =
+        os.arch() === 'arm64' && semver.gte(GECKODRIVER_VERSION, '0.29.1')
+          ? '-aarch64'
+          : '';
+      return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-macos${arch}.tar.gz`;
     case 'linux': {
       if (os.arch() === 'arm') {
         // Don't want to spend hours to build a new one, so for now serve 0.29.0
