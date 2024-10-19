@@ -1,4 +1,4 @@
-GECKO# Geckodriver
+# Geckodriver
 
 This is a simple package that downloads [Geckodriver](https://github.com/mozilla/geckodriver) and 
 provides a node api for accessing the path to the binary. With this package we try to minimize dependencies.
