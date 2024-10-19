@@ -16,9 +16,14 @@ module.exports = {
       (os.platform() === 'linux' && os.arch() === 'arm64')
     ) {
       // Special handling for making it easy on Raspberry Pis
-      const potentialGeckodriverPath = execSync('which geckodriver');
-      if (potentialGeckodriverPath !== undefined) {
-        return potentialGeckodriverPath.toString().trim();
+      try {
+        const potentialGeckodriverPath = execSync('which geckodriver');
+        if (potentialGeckodriverPath !== undefined) {
+          return potentialGeckodriverPath.toString().trim();
+        }
+      } catch (e) {
+        // Catch running inside of Docker on ARM
+        return driverPath;
       }
     } else {
       return driverPath;
