@@ -14,7 +14,6 @@
   "scripts": {
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "eslint-check": "eslint --print-config .eslintrc.js | eslint-config-prettier-check",
     "install": "node install.js",
     "test": "node test.js",
     "check-latest": "node ./check-latest.js"
@@ -30,8 +29,10 @@
     "url": "git+https://github.com/sitespeedio/geckodriver.git"
   },
   "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
   "dependencies": {
-    "node-downloader-helper": "2.1.5",
     "node-stream-zip": "1.15.0",
     "tar": "6.1.13"
   },
@@ -39,10 +40,7 @@
     "eslint": "5.10.0",
     "eslint-config-prettier": "3.3.0",
     "eslint-plugin-prettier": "3.0.0",
-    "prettier": "1.15.3",
-    "request": "2.88.0",
-    "semver": "5.6.0",
-    "toml": "2.3.3"
+    "prettier": "1.15.3"
   },
   "bugs": {
     "url": "https://github.com/sitespeedio/geckodriver/issues"

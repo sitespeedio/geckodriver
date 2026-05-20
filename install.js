@@ -1,16 +1,14 @@
 'use strict';
 
+const os = require('node:os');
+const path = require('node:path');
+const { mkdir, unlink, chmod } = require('node:fs/promises');
+const { createWriteStream } = require('node:fs');
+const { pipeline } = require('node:stream/promises');
+const { Readable } = require('node:stream');
 const StreamZip = require('node-stream-zip');
-const os = require('os');
-const fs = require('fs');
-const path = require('path');
-const pkg = require('./package');
-const { DownloaderHelper } = require('node-downloader-helper');
-const { promisify } = require('util');
 const tar = require('tar');
-const unlink = promisify(fs.unlink);
-const mkdir = promisify(fs.mkdir);
-const chmod = promisify(fs.chmod);
+const pkg = require('./package.json');
 
 // The version of the driver that will be installed
 const GECKODRIVER_VERSION = process.env.GECKODRIVER_VERSION
@@ -21,13 +19,10 @@ const isWindows = os.platform() === 'win32';
 
 function byteHelper(value) {
   // https://gist.github.com/thomseddon/3511330
-  const units = ['b', 'kB', 'MB', 'GB', 'TB'],
-    number = Math.floor(Math.log(value) / Math.log(1024));
-  return (
-    (value / Math.pow(1024, Math.floor(number))).toFixed(1) +
-    ' ' +
-    units[number]
-  );
+  if (!value) return '?';
+  const units = ['B', 'kB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(value) / Math.log(1024));
+  return `${(value / Math.pow(1024, i)).toFixed(1)} ${units[i]}`;
 }
 
 function getDriverUrl() {
@@ -41,21 +36,20 @@ function getDriverUrl() {
   }
 
   switch (os.platform()) {
-    case 'darwin':
+    case 'darwin': {
       // Starting from Geckodriver v0.29.1, there is a separate build for arm64
       // architecture. Let's install it if we are on arm64 as well.
-      // eslint-disable-next-line no-case-declarations
       const arch = os.arch() === 'arm64' ? '-aarch64' : '';
       return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-macos${arch}.tar.gz`;
+    }
     case 'linux': {
       if (os.arch() === 'arm') {
         // Don't want to spend hours to build a new one, so for now serve 0.29.0
         // or unreleased 0.30.0
         return `${urlBase}geckodriver-0.30.0-linux-arm.tar.gz`;
-      } else {
-        const arch = os.arch() === 'x64' ? '64' : '32';
-        return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-linux${arch}.tar.gz`;
       }
+      const arch = os.arch() === 'x64' ? '64' : '32';
+      return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-linux${arch}.tar.gz`;
     }
     case 'win32': {
       const arch = os.arch() === 'x64' ? 'win64' : 'win32';
@@ -66,88 +60,92 @@ function getDriverUrl() {
   }
 }
 
-async function download() {
+async function downloadFile(url, destination) {
+  const response = await fetch(url, { redirect: 'follow' });
+  if (!response.ok || !response.body) {
+    throw new Error(
+      `HTTP ${response.status} ${response.statusText} for ${url}`
+    );
+  }
+  const total = Number(response.headers.get('content-length')) || 0;
+  let downloaded = 0;
+  let lastLog = 0;
+  const body = Readable.fromWeb(response.body);
+  body.on('data', chunk => {
+    downloaded += chunk.length;
+    const now = Date.now();
+    if (now - lastLog >= 250) {
+      const pct = total ? ((downloaded / total) * 100).toFixed(1) : '?';
+      console.log(`${pct}% [${byteHelper(downloaded)}/${byteHelper(total)}]`);
+      lastLog = now;
+    }
+  });
+  await pipeline(body, createWriteStream(destination));
+}
+
+async function extractZip(zipPath, destDir) {
+  const zip = new StreamZip.async({ file: zipPath });
+  try {
+    await zip.extract(null, destDir);
+  } finally {
+    await zip.close();
+  }
+}
+
+async function tryUnlink(p) {
+  try {
+    await unlink(p);
+  } catch (err) {
+    if (err.code !== 'ENOENT') throw err;
+  }
+}
+
+async function install() {
   if (
     process.env.npm_config_geckodriver_skip_download ||
     process.env.GECKODRIVER_SKIP_DOWNLOAD
   ) {
     console.log('Skip downloading Geckodriver');
-  } else {
-    const downloadUrl = getDriverUrl();
-    if (downloadUrl) {
-      try {
-        await mkdir('vendor');
-      } catch (e) {
-        try {
-          await unlink('vendor/geckodriver');
-        } catch (e) {
-          // nothing to do here
-        }
-      }
-      const dl = new DownloaderHelper(downloadUrl, 'vendor', {
-        fileName: 'geckodriver' + (isWindows ? '.zip' : '.tar.gz')
-      });
-
-      dl.on('error', err =>
-        console.error('Could not download Geckodriver: ' + downloadUrl, err)
-      )
-        .on('progress', stats => {
-          const progress = stats.progress.toFixed(1);
-          const speed = byteHelper(stats.speed);
-          const downloaded = byteHelper(stats.downloaded);
-          const total = byteHelper(stats.total);
-          console.log(`${speed}/s - ${progress}% [${downloaded}/${total}]`);
-        })
-        .on('end', () => {
-          if (isWindows) {
-            const zip = new StreamZip({
-              file: 'vendor/geckodriver.zip',
-              storeEntries: true
-            });
-            zip.on('ready', () => {
-              zip.extract(null, './vendor', async err => {
-                console.log(
-                  err
-                    ? 'Could not extract and install Geckodriver'
-                    : `Geckodriver ${GECKODRIVER_VERSION} installed in ${path.join(
-                        __dirname,
-                        'vendor'
-                      )}`
-                );
-                zip.close();
-                await unlink('vendor/geckodriver.zip');
-                await chmod('vendor/geckodriver.exe', '755');
-              });
-            });
-          } else {
-            tar
-              .x({
-                file: 'vendor/geckodriver.tar.gz',
-                cwd: 'vendor'
-              })
-              .then(async () => {
-                await unlink('vendor/geckodriver.tar.gz');
-                await chmod('vendor/geckodriver', '755');
-                console.log(
-                  `Geckodriver ${GECKODRIVER_VERSION} installed in ${path.join(
-                    __dirname,
-                    'vendor'
-                  )}`
-                );
-              });
-          }
-        });
-
-      dl.start();
-    } else {
-      console.log(
-        'Skipping installing Geckodriver on ' +
-          os.platform() +
-          ' for ' +
-          os.arch() +
-          " since there's no official build"
-      );
-    }
+    return;
   }
+
+  const url = getDriverUrl();
+  if (!url) {
+    console.log(
+      `Skipping installing Geckodriver on ${os.platform()} for ${os.arch()} since there's no official build`
+    );
+    return;
+  }
+
+  const vendorDir = path.resolve(__dirname, 'vendor');
+  await mkdir(vendorDir, { recursive: true });
+
+  const ext = isWindows ? '.exe' : '';
+  const binPath = path.join(vendorDir, `geckodriver${ext}`);
+  await tryUnlink(binPath);
+
+  const archivePath = path.join(
+    vendorDir,
+    isWindows ? 'geckodriver.zip' : 'geckodriver.tar.gz'
+  );
+
+  console.log(`Downloading Geckodriver ${GECKODRIVER_VERSION} from ${url}`);
+  await downloadFile(url, archivePath);
+
+  if (isWindows) {
+    await extractZip(archivePath, vendorDir);
+  } else {
+    await tar.x({ file: archivePath, cwd: vendorDir });
+  }
+
+  await unlink(archivePath);
+  await chmod(binPath, 0o755);
+  console.log(`Geckodriver ${GECKODRIVER_VERSION} installed in ${vendorDir}`);
 }
-download();
+
+install().catch(err => {
+  console.error(
+    `Geckodriver ${GECKODRIVER_VERSION} could not be installed: ${err.message}`
+  );
+  process.exit(1);
+});
