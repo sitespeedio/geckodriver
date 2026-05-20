@@ -1,14 +1,17 @@
-'use strict';
+import os from 'node:os';
+import path from 'node:path';
+import { mkdir, unlink, chmod } from 'node:fs/promises';
+import { createWriteStream } from 'node:fs';
+import { pipeline } from 'node:stream/promises';
+import { Readable } from 'node:stream';
+import { fileURLToPath } from 'node:url';
+import { createRequire } from 'node:module';
+import StreamZip from 'node-stream-zip';
+import tar from 'tar';
 
-const os = require('node:os');
-const path = require('node:path');
-const { mkdir, unlink, chmod } = require('node:fs/promises');
-const { createWriteStream } = require('node:fs');
-const { pipeline } = require('node:stream/promises');
-const { Readable } = require('node:stream');
-const StreamZip = require('node-stream-zip');
-const tar = require('tar');
+const require = createRequire(import.meta.url);
 const pkg = require('./package.json');
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // The version of the driver that will be installed
 const GECKODRIVER_VERSION = process.env.GECKODRIVER_VERSION
@@ -55,8 +58,9 @@ function getDriverUrl() {
       const arch = os.arch() === 'x64' ? 'win64' : 'win32';
       return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-${arch}.zip`;
     }
-    default:
-      return undefined;
+    default: {
+      return;
+    }
   }
 }
 
@@ -86,7 +90,7 @@ async function downloadFile(url, destination) {
 async function extractZip(zipPath, destDir) {
   const zip = new StreamZip.async({ file: zipPath });
   try {
-    await zip.extract(null, destDir);
+    await zip.extract(undefined, destDir);
   } finally {
     await zip.close();
   }
@@ -95,8 +99,8 @@ async function extractZip(zipPath, destDir) {
 async function tryUnlink(p) {
   try {
     await unlink(p);
-  } catch (err) {
-    if (err.code !== 'ENOENT') throw err;
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
   }
 }
 
@@ -132,20 +136,20 @@ async function install() {
   console.log(`Downloading Geckodriver ${GECKODRIVER_VERSION} from ${url}`);
   await downloadFile(url, archivePath);
 
-  if (isWindows) {
-    await extractZip(archivePath, vendorDir);
-  } else {
-    await tar.x({ file: archivePath, cwd: vendorDir });
-  }
+  await (isWindows
+    ? extractZip(archivePath, vendorDir)
+    : tar.x({ file: archivePath, cwd: vendorDir }));
 
   await unlink(archivePath);
   await chmod(binPath, 0o755);
   console.log(`Geckodriver ${GECKODRIVER_VERSION} installed in ${vendorDir}`);
 }
 
-install().catch(err => {
+try {
+  await install();
+} catch (error) {
   console.error(
-    `Geckodriver ${GECKODRIVER_VERSION} could not be installed: ${err.message}`
+    `Geckodriver ${GECKODRIVER_VERSION} could not be installed: ${error.message}`
   );
-  process.exit(1);
-});
+  process.exitCode = 1;
+}

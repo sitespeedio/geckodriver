@@ -1,6 +1,6 @@
-/* eslint-disable no-console */
-'use strict';
+import { createRequire } from 'node:module';
 
+const require = createRequire(import.meta.url);
 const pkg = require('./package.json');
 
 const LATEST_URL =
@@ -17,7 +17,7 @@ function compareVersions(a, b) {
   return 0;
 }
 
-async function main() {
+try {
   const response = await fetch(LATEST_URL, {
     headers: { Accept: 'application/vnd.github+json' }
   });
@@ -25,7 +25,7 @@ async function main() {
     throw new Error(`HTTP ${response.status} ${response.statusText}`);
   }
   const data = await response.json();
-  const tag = data && data.tag_name;
+  const tag = data?.tag_name;
   if (!tag) {
     throw new Error('Could not find tag_name in GitHub release response');
   }
@@ -33,12 +33,11 @@ async function main() {
   const currentVersion = pkg.geckodriver_version;
   if (compareVersions(latestVersion, currentVersion) > 0) {
     console.log(`Upgrade to ${latestVersion}`);
-    process.exit(1);
+    process.exitCode = 1;
+  } else {
+    console.log(`Relax, ${currentVersion} is the latest version`);
   }
-  console.log(`Relax, ${currentVersion} is the latest version`);
+} catch (error) {
+  console.log(`Failed to parse latest release version: ${error.message}`);
+  process.exitCode = 1;
 }
-
-main().catch(err => {
-  console.log(`Failed to parse latest release version: ${err.message}`);
-  process.exit(1);
-});
