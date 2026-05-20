@@ -4,11 +4,13 @@ import { mkdir, unlink, chmod } from 'node:fs/promises';
 import { createWriteStream } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
-import StreamZip from 'node-stream-zip';
-import tar from 'tar';
+import { x as extractTar } from 'tar';
 
+const execFileAsync = promisify(execFile);
 const require = createRequire(import.meta.url);
 const pkg = require('./package.json');
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -87,13 +89,10 @@ async function downloadFile(url, destination) {
   await pipeline(body, createWriteStream(destination));
 }
 
-async function extractZip(zipPath, destDir) {
-  const zip = new StreamZip.async({ file: zipPath });
-  try {
-    await zip.extract(undefined, destDir);
-  } finally {
-    await zip.close();
-  }
+// Windows 10 build 17063+ (April 2018) ships bsdtar as tar.exe and can extract
+// a .zip in place. We use that instead of pulling in a JS zip dependency.
+async function extractZipWindows(zipPath, destDir) {
+  await execFileAsync('tar', ['-xf', zipPath, '-C', destDir]);
 }
 
 async function tryUnlink(p) {
@@ -137,8 +136,8 @@ async function install() {
   await downloadFile(url, archivePath);
 
   await (isWindows
-    ? extractZip(archivePath, vendorDir)
-    : tar.x({ file: archivePath, cwd: vendorDir }));
+    ? extractZipWindows(archivePath, vendorDir)
+    : extractTar({ file: archivePath, cwd: vendorDir }));
 
   await unlink(archivePath);
   await chmod(binPath, 0o755);
