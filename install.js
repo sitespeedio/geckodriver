@@ -53,6 +53,9 @@ function getDriverUrl() {
         // or unreleased 0.30.0
         return `${urlBase}geckodriver-0.30.0-linux-arm.tar.gz`;
       }
+      if (os.arch() === 'arm64') {
+        return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-linux-aarch64.tar.gz`;
+      }
       const arch = os.arch() === 'x64' ? '64' : '32';
       return `${urlBase}geckodriver-${GECKODRIVER_VERSION}-linux${arch}.tar.gz`;
     }
