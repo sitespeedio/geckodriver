@@ -6,11 +6,20 @@ provides a node api for accessing the path to the binary. With this package we t
 
 How to use?
 ```node
-const driver = require('@sitespeed.io/geckodriver');
+import driver from '@sitespeed.io/geckodriver';
 
-const binPath = driver.binPath();
+// Downloads Geckodriver the first time, then returns the path to the binary
+const binPath = await driver.ensureBinPath();
 // launch geckodriver from binPath
 ```
+
+The package has no install script, so `npm install` does not download Geckodriver. If you need the driver before the first run, for example when you build a Docker image or on a machine without internet access during tests, download it with:
+
+```
+node node_modules/@sitespeed.io/geckodriver/install.js
+```
+
+`binPath()` returns the path without a download.
 
 You can override where you download the Geckodriver by setting *process.env.GECKODRIVER_BASE_URL*. You can skip donwloading Geckodriver by setting *process.env.GECKODRIVER_SKIP_DOWNLOAD*.
 
