@@ -1,7 +1,7 @@
 import os from 'node:os';
 import path from 'node:path';
 import { mkdir, unlink, chmod } from 'node:fs/promises';
-import { createWriteStream } from 'node:fs';
+import { createWriteStream, realpathSync } from 'node:fs';
 import { pipeline } from 'node:stream/promises';
 import { Readable } from 'node:stream';
 import { execFile } from 'node:child_process';
@@ -106,7 +106,7 @@ async function tryUnlink(p) {
   }
 }
 
-async function install() {
+export async function install() {
   if (
     process.env.npm_config_geckodriver_skip_download ||
     process.env.GECKODRIVER_SKIP_DOWNLOAD
@@ -147,11 +147,17 @@ async function install() {
   console.log(`Geckodriver ${GECKODRIVER_VERSION} installed in ${vendorDir}`);
 }
 
-try {
-  await install();
-} catch (error) {
-  console.error(
-    `Geckodriver ${GECKODRIVER_VERSION} could not be installed: ${error.message}`
-  );
-  process.exitCode = 1;
+// Install only when this file runs as a script, not when index.js imports it.
+if (
+  process.argv[1] &&
+  realpathSync(process.argv[1]) === fileURLToPath(import.meta.url)
+) {
+  try {
+    await install();
+  } catch (error) {
+    console.error(
+      `Geckodriver ${GECKODRIVER_VERSION} could not be installed: ${error.message}`
+    );
+    process.exitCode = 1;
+  }
 }
